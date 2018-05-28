@@ -27,7 +27,7 @@ public class JSONObjectParser implements Callback<JsonObject> {
     public JSONObjectParser(String baseUrl, CallBackJSONObject call) {
         this.callBackJSONObject = call;
         this.baseURL = baseUrl;
-       // retrofitInterface = GeoMingleApp.newInstance().newRetrofitRequest();
+       // retrofitInterface =RestClientRetrofit.getClient().create(RestClientRetrofit.RetrofitInterface.class);;
     }
 
     //=================================================================
@@ -71,6 +71,13 @@ public class JSONObjectParser implements Callback<JsonObject> {
         objectRequest.enqueue(this);
     }
 
+      public void uploadVideo(RestClientRetrofit.RetrofitInterface RetrofitInterface, MultipartBody.Part video, MultipartBody.Part Images) {
+          String url = baseURL /*+ "/" + functionName*/;
+          retrofitInterface = RetrofitInterface;
+          Call<JsonObject> objectRequest = retrofitInterface.upload(url, video ,Images);
+          //Call<JsonObject> objectRequest = retrofitInterface.upload(url, "image", geofece_id,text,Images,"2017-07-08 22:26:58",token);
+          objectRequest.enqueue(this);
+      }
     public void sendPostRequest(String functionName, JsonObject jsonObject, String token) {
         String url = baseURL + "/" + functionName;
         Call<JsonObject> objectRequest = retrofitInterface.postData(url, jsonObject, token);

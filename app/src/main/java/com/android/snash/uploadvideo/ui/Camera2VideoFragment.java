@@ -17,6 +17,7 @@
 package com.android.snash.uploadvideo.ui;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -44,7 +45,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v13.app.FragmentCompat;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -55,7 +55,6 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -63,6 +62,12 @@ import android.widget.Toast;
 
 import com.android.snash.uploadvideo.R;
 import com.android.snash.uploadvideo.customView.AutoFitTextureView;
+import com.android.snash.uploadvideo.data.network.Interfaces.CallBackJSONObject;
+import com.android.snash.uploadvideo.data.network.ParserApiHelper.JSONObjectParser;
+import com.android.snash.uploadvideo.data.network.RestClient;
+import com.android.snash.uploadvideo.data.network.RestClientRetrofit;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,6 +77,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class Camera2VideoFragment extends Fragment
         implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback {
@@ -85,10 +97,12 @@ public class Camera2VideoFragment extends Fragment
     private static final String TAG = "Camera2VideoFragment";
     private static final int REQUEST_VIDEO_PERMISSIONS = 1;
     private static final String FRAGMENT_DIALOG = "dialog";
-
+    String videoUrl;
+    String serverVideoUrl;
     private static final String[] VIDEO_PERMISSIONS = {
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_EXTERNAL_STORAGE
     };
     ImageView flash_img;
     RelativeLayout flash_Rel;
@@ -241,6 +255,7 @@ public class Camera2VideoFragment extends Fragment
     private Integer mSensorOrientation;
     private String mNextVideoAbsolutePath;
     private CaptureRequest.Builder mPreviewBuilder;
+    private RestClientRetrofit.RetrofitInterface retrofitInterface;
 
     public static Camera2VideoFragment newInstance() {
         return new Camera2VideoFragment();
@@ -300,7 +315,9 @@ public class Camera2VideoFragment extends Fragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.barcode_capture, container, false);
+        videoUrl = getResources().getString(R.string.videoUrl);
+        serverVideoUrl = getResources().getString(R.string.serverVideoUrl);
+        return inflater.inflate(R.layout.fragment_camera2, container, false);
     }
 
 
@@ -394,6 +411,7 @@ public class Camera2VideoFragment extends Fragment
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onPause() {
@@ -411,6 +429,7 @@ public class Camera2VideoFragment extends Fragment
                     stopRecordingVideo();
                 } else {
                     startRecordingVideo();
+                    Log.d("kfj", "kj");
                 }
                 break;
             }
@@ -703,6 +722,8 @@ public class Camera2VideoFragment extends Fragment
         mMediaRecorder.setVideoEncodingBitRate(10000000);
         mMediaRecorder.setVideoFrameRate(30);
         mMediaRecorder.setVideoSize(mVideoSize.getWidth(), mVideoSize.getHeight());
+        //1280x960 1280x720 1280x640 1440x1080 160x120 240x160
+//         mMediaRecorder.setVideoSize(160, 120);
         mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
@@ -800,13 +821,64 @@ public class Camera2VideoFragment extends Fragment
         // Stop recording
         mMediaRecorder.stop();
         mMediaRecorder.reset();
-
         Activity activity = getActivity();
         if (null != activity) {
             Toast.makeText(activity, "Video saved: " + mNextVideoAbsolutePath,
                     Toast.LENGTH_SHORT).show();
             Log.d(TAG, "Video saved: " + mNextVideoAbsolutePath);
         }
+        MultipartBody.Part fileImage = null;
+        MultipartBody.Part fileVideo = null;
+      //  File fileImageData = new File("/storage/self/primary/DCIM/Camera/IMG_20180215_135030.jpg");
+        File filevideoData = new File(mNextVideoAbsolutePath);
+        //RequestBody filePart = RequestBody.create(MediaType.parse("image/*"), fileImageData);
+        RequestBody filePartVideo = RequestBody.create(MediaType.parse("video/*"), filevideoData);
+      //  fileImage = MultipartBody.Part.createFormData("submit", fileImageData.getName(), filePart);
+        fileVideo = MultipartBody.Part.createFormData("fileToUpload", filevideoData.getName(), filePartVideo);
+        JSONObjectParser sharePost = new JSONObjectParser(videoUrl, new CallBackJSONObject() {
+            @Override
+            public void onSuccess(Response<JsonObject> o) {
+                // progressDialog.dismiss();
+                Gson gson = new Gson();
+                try {
+                    //  Type listType = new TypeToken<AddPostResponse>() {
+                    //  }.getType();
+                    //   AddPostResponse defaultResponse = gson.fromJson(o.body().toString(), listType);
+                    //  if (defaultResponse.getStatus())
+                    // mGeoMingleToast.Show("posted", 0);
+                    Log.d("onSuccess ", " 200 Success");
+                    // actionTaken.reloadTimeLineFeeds();
+                } catch (Exception e) {
+
+                }
+                //dismiss();
+            }
+
+            @Override
+            public void OnFail(Throwable o) {
+                //  dismiss();
+                // mGeoMingleToast.Show("server error", 0);
+                Log.d("OnFail ", "  OnFail");
+
+                // progressDialog.dismiss();
+
+            }
+        });
+    /*    retrofitInterface = RestClientRetrofit.getClient(getContext()).create(RestClientRetrofit.RetrofitInterface.class);
+         sharePost.uploadVideo(retrofitInterface, fileVideo, fileImage);*/
+        final RestClient.ApiService apiService = RestClient.getClient(getContext()).create(RestClient.ApiService.class);
+        apiService.upload(serverVideoUrl, fileVideo/*, fileImage*/).enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                Log.d("onSuccess ", " 200 Success");
+            }
+
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                Log.e(TAG, t.getMessage());
+            }
+        });
+
         mNextVideoAbsolutePath = null;
         startPreview();
     }

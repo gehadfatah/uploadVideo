@@ -5,7 +5,11 @@
     <string name="description_info">Info</string>
     <string name="permission_request">This sample needs permission for camera and audio recording.</string>
     <string name="camera_error">This device doesn\'t support Camera2 API.</string>
-    <string name="main_url">kjd</string>
+    <string name="main_url">http://192.168.1.103/</string>
+    <string name="main_url2">http://37.187.157.211/</string>
+    <string name="videoUrl">http://192.168.1.103/api/upload.php</string>
+
+    <string name="serverVideoUrl">http://37.187.157.211/upload.php</string>
     <string name="intro_message">
         <![CDATA[
 

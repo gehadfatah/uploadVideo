@@ -41,7 +41,7 @@
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
 
-                    android:src="@drawable/ic_flash_off" />
+                    android:src="@drawable/ic_flash_on" />
             </RelativeLayout>
 
             <RelativeLayout

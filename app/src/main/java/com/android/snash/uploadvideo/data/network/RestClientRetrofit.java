@@ -107,6 +107,14 @@ public class RestClientRetrofit {
                                 @Part("date_time") RequestBody date_time,
                                 @Header("token") String token);
 
+        /*@Headers({"content-type: text/html; charset=UTF-8"})*/
+        @Multipart
+        @POST
+        Call<JsonObject> upload(@Url String url,
+                                @Part MultipartBody.Part fileToUpload,
+                                @Part MultipartBody.Part submit
+        );
+
         //=================================================================
         // getting data from web api method with GET Request Type
         // it's optional to add headers to Requested Method
